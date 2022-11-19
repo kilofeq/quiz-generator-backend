@@ -13,9 +13,13 @@ const QuizSchema = new Schema({
 		type: String,
 		required: [true, 'Please enter a description']
 	},
-	questionsAndAnswers: {
-		type: Schema.Types.Map
-	}
+	questionsAndAnswers: [{
+		question: String,
+		answers: [{
+			text: String,
+			isCorrect: Boolean
+		}]
+	}]
 })
 
 const Quiz = model('Quiz', QuizSchema)
