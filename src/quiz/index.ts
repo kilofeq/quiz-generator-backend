@@ -2,9 +2,6 @@ import express from 'express'
 import * as dotenv from 'dotenv'
 import axios from 'axios'
 import pdf from 'pdf-parse'
-import translateText from '../helpers/adapters/translateText'
-import generateQuestion from '../helpers/adapters/generateQuestion'
-import getAnswerByQuestionAndContext from '../helpers/adapters/getAnswerByQuestionAndContext'
 import { generateQuestionsAnswersByContext } from '../helpers/generateQuestionsAnswersByContext'
 const router = express.Router()
 dotenv.config()
