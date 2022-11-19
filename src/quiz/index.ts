@@ -2,6 +2,9 @@ import express from 'express'
 import * as dotenv from 'dotenv'
 import axios from 'axios'
 import pdf from 'pdf-parse'
+import translateText from '../helpers/adapters/translateText'
+import generateQuestion from '../helpers/adapters/generateQuestion'
+import getAnswerByQuestionAndContext from '../helpers/adapters/getAnswerByQuestionAndContext'
 const router = express.Router()
 dotenv.config()
 
@@ -32,8 +35,20 @@ router.use('/generate', async (req, res) => {
 	const articleTexts = articleTextPromises.map(
 		promise => promise.status === 'fulfilled' ? promise.value : null
 	).filter(Boolean)
-	// TODO: Generate questions and answers for provided articles
-	res.status(200).send(articleTexts)
+	const parsedText = articleTexts[0]?.replace(/(\r\n|\n|\r)/gm, ' ').replace(/(„|”)/g, '"')
+	const translatedText = await translateText(parsedText || '', 'pl')
+	const question = await generateQuestion(translatedText)
+	const answer = await getAnswerByQuestionAndContext(question, translatedText)
+	const answers = [{
+		question: await translateText(question, 'en'),
+		answers: [
+			{
+				text: await translateText(answer, 'en'),
+				isCorrect: true
+			}
+		]
+	}]
+	res.status(200).send(answers)
 })
 
 export default router
