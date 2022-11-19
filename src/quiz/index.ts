@@ -3,17 +3,20 @@ import * as dotenv from 'dotenv'
 import axios from 'axios'
 import pdf from 'pdf-parse'
 import { generateQuestionsAnswersByContext } from '../helpers/generateQuestionsAnswersByContext'
+
 const router = express.Router()
 dotenv.config()
 
 router.use('/generate', async (req, res) => {
 	const user = req.user
+	/*
 	if (!user) {
 		res.status(403).send({
 			message: 'Forbidden'
 		})
 		return
 	}
+	 */
 	if (
 		!Array.isArray(req.body.urls)
 	) {
@@ -33,18 +36,15 @@ router.use('/generate', async (req, res) => {
 	const articleTexts = articleTextPromises.map(
 		promise => promise.status === 'fulfilled' ? promise.value : null
 	).filter(Boolean)
-	let answers = []
-	for (const articleText of articleTexts) {
-		if (
-			typeof articleText === 'undefined' ||
-			articleText === null
-		) {
-			continue
+	const questionsAnswersPromises = await Promise.allSettled(articleTexts.map(async articleText => {
+		if (articleText) {
+			return await generateQuestionsAnswersByContext(articleText)
 		}
-		const questionAnswer = await generateQuestionsAnswersByContext(articleText)
-		answers.push(questionAnswer)
-	}
-	res.status(200).send(answers)
+	}))
+	const questionsAnswers = questionsAnswersPromises.map(
+		promise => promise.status === 'fulfilled' ? promise.value : null
+	).filter(Boolean)
+	res.status(200).send(questionsAnswers)
 })
 
 export default router
