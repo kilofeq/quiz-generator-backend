@@ -6,6 +6,7 @@ import mongoose from 'mongoose'
 import passport from 'passport'
 // Routes imports
 import auth from './auth'
+import articles from './articles'
 
 // Dotenv
 dotenv.config()
@@ -22,6 +23,7 @@ app.use(passport.initialize())
 
 // Routes
 app.use('/auth', auth)
+app.use('/articles', articles)
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
