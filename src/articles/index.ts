@@ -1,8 +1,8 @@
 import express from 'express'
 import * as dotenv from 'dotenv'
 import axios from 'axios'
-import process from 'process'
 import * as cheerio from 'cheerio'
+import pdf from 'pdf-parse'
 const router = express.Router()
 dotenv.config()
 
