@@ -4,6 +4,7 @@ import bodyParser from 'body-parser'
 import * as dotenv from 'dotenv'
 import mongoose from 'mongoose'
 import passport from 'passport'
+import cors from 'cors'
 // Routes imports
 import auth from './auth'
 import articles from './articles'
@@ -21,6 +22,7 @@ mongoose.connect(process.env.MONGO_URI!)
 app.use(bodyParser.json())
 app.use(cookieParser(secret))
 app.use(passport.initialize())
+app.use(cors())
 
 // Routes
 app.use('/auth', auth)
