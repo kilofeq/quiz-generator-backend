@@ -1,4 +1,9 @@
-import axios, { AxiosError } from 'axios'
+import axios from 'axios'
+import axiosRetry from 'axios-retry'
+axiosRetry(axios, {
+  retries: 3,
+  retryDelay: axiosRetry.exponentialDelay
+})
 
 async function generateQuestion(
   sourceText: string
