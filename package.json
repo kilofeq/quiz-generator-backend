@@ -33,6 +33,7 @@
     "express-jwt": "^7.7.7",
     "express-session": "^1.17.3",
     "jsonwebtoken": "^8.5.1",
+    "jspdf": "^2.5.1",
     "mongoose": "^6.7.2",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.0",

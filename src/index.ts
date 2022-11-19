@@ -8,6 +8,7 @@ import passport from 'passport'
 import auth from './auth'
 import articles from './articles'
 import quiz from './quiz'
+import documentExporter from './documentExporter'
 
 // Dotenv
 dotenv.config()
@@ -26,6 +27,8 @@ app.use(passport.initialize())
 app.use('/auth', auth)
 app.use('/articles', articles)
 app.use('/quiz', quiz)
+app.use('/export-document', documentExporter)
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
