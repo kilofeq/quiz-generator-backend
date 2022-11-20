@@ -20,7 +20,8 @@ const app = express()
 mongoose.connect(process.env.MONGO_URI!)
 
 // Plugins
-app.use(bodyParser.json())
+app.use(bodyParser.json({limit: '50mb'}))
+app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(cookieParser(secret))
 app.use(passport.initialize())
 app.use(cors())

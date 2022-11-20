@@ -44,9 +44,14 @@ router.use('/generate', async (req, res) => {
 		const parsedPdf = await pdf(response.data)
 		return parsedPdf.text
 	}))
+	const articleBase64 = req.body.articleBase64 ? Buffer.from(req.body.articleBase64, 'base64') : null
+	const parsedArticleBase64 = articleBase64 ? await pdf(articleBase64) : null
 	const articlesTexts = articlesTextPromises.map(
 		promise => promise.status === 'fulfilled' ? promise.value : null
 	).filter(Boolean) as string[]
+	if (parsedArticleBase64) {
+		articlesTexts.push(parsedArticleBase64.text)
+	}
 	const articleTextsChunks = articlesTexts.flatMap(articleText => chunkSubstr(articleText, 8000))
 	const questionsAnswersPromises = await Promise.allSettled(articleTextsChunks.map(
 		chunk => generateQuestionsAnswersByContext(chunk)
