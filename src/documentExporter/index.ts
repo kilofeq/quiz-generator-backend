@@ -10,11 +10,11 @@ dotenv.config()
 interface QuizBody {
   questions: {
     question: string,
-    answers: string[]
+    answer: string
   }[]
 }
 
-const pdf = new jsPDF({
+let pdf = new jsPDF({
   orientation: "portrait",
   format: "a4",
 });
@@ -27,15 +27,18 @@ pdf.setLanguage('pl');
 
 router.use('', async (req, res) => {
   let exportedDocument;
+  let withAnswers = (req.query.withAnswers === "true");
   if(req.query.fileFormat === "pdf") {
-    exportedDocument = exportPdf(req.body);
+    exportedDocument = exportPdf(req.body, withAnswers);
+
+    resetPdf();
 
     return res.status(200)
       .set({ 'content-type': 'application/pdf' })
       .send(exportedDocument);
   }
   else if(req.query.fileFormat === "docx") {
-    exportedDocument = await exportDocx(req.body);
+    exportedDocument = await exportDocx(req.body, withAnswers);
     console.log(exportedDocument);
 
     return res.status(200)
@@ -46,12 +49,12 @@ router.use('', async (req, res) => {
   }
 })
 
-async function exportDocx(body: QuizBody) {
+async function exportDocx(body: QuizBody, withAnswers: boolean) {
   const docx = new Document({
     sections: [
       {
         properties: {},
-        children: createContent(body),
+        children: createContent(body, withAnswers),
       },
     ],
   });
@@ -59,12 +62,14 @@ async function exportDocx(body: QuizBody) {
     return string;
   });
 
-  function createContent(body: QuizBody): Paragraph[] {
+  function createContent(body: QuizBody, withAnswers: boolean): Paragraph[] {
     const result = [];
     for (let i = 0; i<body.questions?.length; i++){
       result.push(addQuestion(body.questions?.[i]?.question));
-      for(let j = 0; j<body.questions?.[i]?.answers?.length; j++) {
-        result.push(addAnswer(body.questions?.[i]?.answers[j]));
+      if (withAnswers) {
+        result.push(addAnswer(body.questions?.[i]?.answer));
+      } else {
+        result.push(addInput());
       }
       result.push(addBreak());
     }
@@ -98,7 +103,16 @@ async function exportDocx(body: QuizBody) {
     return new Paragraph({
       children: [
         new TextRun({
-          text: "▢ " + content,
+          text: "odp: " + content,
+        }),
+      ],
+    });
+  }
+  function addInput() {
+    return new Paragraph({
+      children: [
+        new TextRun({
+          text: "odp: ..................................................................",
         }),
       ],
     });
@@ -106,18 +120,25 @@ async function exportDocx(body: QuizBody) {
   return result;
 }
 
-function exportPdf(body: QuizBody) {
+function exportPdf(body: QuizBody, withAnswers: boolean) {
   let currentY = 15;
   for (let i = 0; i<body.questions?.length; i++){
     addQuestion(body.questions?.[i]?.question);
-    for(let j = 0; j<body.questions?.[i]?.answers?.length; j++) {
-      addAnswer(body.questions?.[i]?.answers[j]);
+    if (withAnswers) {
+      addAnswer(body.questions?.[i]?.answer);
+    } else {
+      addInput();
     }
     nextQuestion();
   }
 
   function nextLine() {
-    currentY = currentY + 10;
+    currentY = currentY + 15;
+  }
+
+  function addInput() {
+    pdf.text(`odp: ..................................................................`, 10, currentY);
+    nextLine();
   }
 
   function addQuestion(content: string) {
@@ -128,21 +149,34 @@ function exportPdf(body: QuizBody) {
   }
 
   function addAnswer(content: string) {
-    pdf.text(`- ${content}`, 10, currentY);
+    pdf.text(`odp: ${content}`, 10, currentY);
     nextLine();
   }
 
   function nextQuestion() {
-    if (currentY > pdf.internal.pageSize.height - 50) {
+    if (currentY > pdf.internal.pageSize.height - 40) {
       pdf.addPage();
       currentY = 15;
     } else {
-      currentY = currentY + 15;
+      currentY = currentY + 10;
     }
   }
   console.log(pdf.internal.pageSize.height);
+  console.log(withAnswers);
   return pdf.output();
 }
 
+function resetPdf() {
+  pdf = new jsPDF({
+    orientation: "portrait",
+    format: "a4",
+  });
+
+  pdf.addFileToVFS("Lato.ttf", font);
+  pdf.addFont("Lato.ttf", "Lato", "normal");
+  pdf.setFont("Lato");
+
+  pdf.setLanguage('pl');
+}
 
 export default router
