@@ -1,11 +1,9 @@
 import express from 'express'
 import * as dotenv from 'dotenv'
-import axios from 'axios'
-import * as cheerio from 'cheerio'
 import { font } from './Fonts/Lato';
 import { jsPDF } from "jspdf";
 const router = express.Router();
-import { BorderStyle, Document, HeadingLevel, Packer, Paragraph, TextRun } from 'docx'
+import { Document, HeadingLevel, Packer, Paragraph, TextRun } from 'docx'
 
 dotenv.config()
 
@@ -32,10 +30,6 @@ router.use('', async (req, res) => {
   if(req.query.fileFormat === "pdf") {
     exportedDocument = exportPdf(req.body);
 
-    // res.setHeader('Content-Type', 'application/pdf');
-    // res.setHeader('Content-Disposition', 'attachment; filename=dupa.pdf; charset=utf-8');
-    // res.setHeader('Content-Length', exportedDocument.byteLength)
-
     return res.status(200)
       .set({ 'content-type': 'application/pdf' })
       .send(exportedDocument);
@@ -47,8 +41,9 @@ router.use('', async (req, res) => {
     return res.status(200)
       .set({ 'content-type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'content-length': exportedDocument.length })
       .end(exportedDocument);
+  } else {
+    return res.sendStatus(400);
   }
-
 })
 
 async function exportDocx(body: QuizBody) {
