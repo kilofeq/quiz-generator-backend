@@ -142,7 +142,7 @@ function exportPdf(body: QuizBody, withAnswers: boolean) {
   }
 
   function addQuestion(content: string) {
-    pdf.setFontSize(25);
+    pdf.setFontSize(20);
     pdf.text(content, 10, currentY);
     pdf.setFontSize(15);
     nextLine();
