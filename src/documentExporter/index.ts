@@ -4,7 +4,9 @@ import axios from 'axios'
 import * as cheerio from 'cheerio'
 import { font } from './Fonts/Lato';
 import { jsPDF } from "jspdf";
-const router = express.Router()
+const router = express.Router();
+import { BorderStyle, Document, HeadingLevel, Packer, Paragraph, TextRun } from 'docx'
+
 dotenv.config()
 
 interface QuizBody {
@@ -14,17 +16,16 @@ interface QuizBody {
   }[]
 }
 
-
-const doc = new jsPDF({
+const pdf = new jsPDF({
   orientation: "portrait",
   format: "a4",
-})
+});
 
-doc.addFileToVFS("Lato.ttf", font);
-doc.addFont("Lato.ttf", "Lato", "normal");
-doc.setFont("Lato");
+pdf.addFileToVFS("Lato.ttf", font);
+pdf.addFont("Lato.ttf", "Lato", "normal");
+pdf.setFont("Lato");
 
-doc.setLanguage('pl');
+pdf.setLanguage('pl');
 
 router.use('', async (req, res) => {
   let exportedDocument;
@@ -34,20 +35,80 @@ router.use('', async (req, res) => {
     // res.setHeader('Content-Type', 'application/pdf');
     // res.setHeader('Content-Disposition', 'attachment; filename=dupa.pdf; charset=utf-8');
     // res.setHeader('Content-Length', exportedDocument.byteLength)
-    res.type('arraybuffer');
 
     return res.status(200)
-      .set({ 'content-type': 'application/pdf; charset=font' })
+      .set({ 'content-type': 'application/pdf' })
       .send(exportedDocument);
   }
   else if(req.query.fileFormat === "docx") {
-    
+    exportedDocument = await exportDocx(req.body);
+    console.log(exportedDocument);
+
+    return res.status(200)
+      .set({ 'content-type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'content-length': exportedDocument.length })
+      .end(exportedDocument);
   }
 
 })
 
-function exportDoc(body: QuizBody) {
+async function exportDocx(body: QuizBody) {
+  const docx = new Document({
+    sections: [
+      {
+        properties: {},
+        children: createContent(body),
+      },
+    ],
+  });
+  const result = await Packer.toBuffer(docx).then((string) => {
+    return string;
+  });
 
+  function createContent(body: QuizBody): Paragraph[] {
+    const result = [];
+    for (let i = 0; i<body.questions?.length; i++){
+      result.push(addQuestion(body.questions?.[i]?.question));
+      for(let j = 0; j<body.questions?.[i]?.answers?.length; j++) {
+        result.push(addAnswer(body.questions?.[i]?.answers[j]));
+      }
+      result.push(addBreak());
+    }
+    return result;
+  }
+
+  function addBreak(): Paragraph {
+    return new Paragraph({
+      children: [
+        new TextRun({
+          break: 1,
+        }),
+      ],
+    });
+  }
+
+  function addQuestion(content: string): Paragraph {
+    return new Paragraph({
+      heading: HeadingLevel.HEADING_1,
+      spacing: {
+        after: 200,
+      },
+      children: [
+        new TextRun({
+          text: content,
+        }),
+      ],
+    });
+  }
+  function addAnswer(content: string) {
+    return new Paragraph({
+      children: [
+        new TextRun({
+          text: "▢ " + content,
+        }),
+      ],
+    });
+  }
+  return result;
 }
 
 function exportPdf(body: QuizBody) {
@@ -65,27 +126,27 @@ function exportPdf(body: QuizBody) {
   }
 
   function addQuestion(content: string) {
-    doc.setFontSize(25);
-    doc.text(content, 10, currentY);
-    doc.setFontSize(15);
+    pdf.setFontSize(25);
+    pdf.text(content, 10, currentY);
+    pdf.setFontSize(15);
     nextLine();
   }
 
   function addAnswer(content: string) {
-    doc.text(`- ${content}`, 10, currentY);
+    pdf.text(`- ${content}`, 10, currentY);
     nextLine();
   }
 
   function nextQuestion() {
-    if (currentY > doc.internal.pageSize.height - 50) {
-      doc.addPage();
+    if (currentY > pdf.internal.pageSize.height - 50) {
+      pdf.addPage();
       currentY = 15;
     } else {
       currentY = currentY + 15;
     }
   }
-  console.log(doc.internal.pageSize.height);
-  return doc.output();
+  console.log(pdf.internal.pageSize.height);
+  return pdf.output();
 }
 
 
