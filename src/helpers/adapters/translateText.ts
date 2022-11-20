@@ -29,7 +29,7 @@ async function translateText(
     return response.data[0].translation_text
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error(error.message)
+      console.error(error)
     } else {
       console.error(error)
     }

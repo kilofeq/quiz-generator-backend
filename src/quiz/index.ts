@@ -7,6 +7,17 @@ import { generateQuestionsAnswersByContext } from '../helpers/generateQuestionsA
 const router = express.Router()
 dotenv.config()
 
+function chunkSubstr(str: string, size: number) {
+  const numChunks = Math.ceil(str.length / size)
+  const chunks = new Array(numChunks)
+
+  for (let i = 0, o = 0; i < numChunks; ++i, o += size) {
+    chunks[i] = str.substr(o, size)
+  }
+
+  return chunks
+}
+
 router.use('/generate', async (req, res) => {
 	const user = req.user
 	/*
@@ -26,21 +37,20 @@ router.use('/generate', async (req, res) => {
 		return
 	}
 	const urls = req.body.urls.map((url: string) => String(url)) as string[]
-	const articleTextPromises = await Promise.allSettled(urls.map(async url => {
+	const articlesTextPromises = await Promise.allSettled(urls.map(async url => {
 		const response = await axios.get(url, {
 			responseType: 'arraybuffer'
 		})
 		const parsedPdf = await pdf(response.data)
 		return parsedPdf.text
 	}))
-	const articleTexts = articleTextPromises.map(
+	const articlesTexts = articlesTextPromises.map(
 		promise => promise.status === 'fulfilled' ? promise.value : null
-	).filter(Boolean)
-	const questionsAnswersPromises = await Promise.allSettled(articleTexts.map(async articleText => {
-		if (articleText) {
-			return await generateQuestionsAnswersByContext(articleText)
-		}
-	}))
+	).filter(Boolean) as string[]
+	const articleTextsChunks = articlesTexts.flatMap(articleText => chunkSubstr(articleText, 8000))
+	const questionsAnswersPromises = await Promise.allSettled(articleTextsChunks.map(
+		chunk => generateQuestionsAnswersByContext(chunk)
+	))
 	const questionsAnswers = questionsAnswersPromises.map(
 		promise => promise.status === 'fulfilled' ? promise.value : null
 	).filter(Boolean)
